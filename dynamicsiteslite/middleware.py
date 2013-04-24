@@ -1,3 +1,4 @@
+import importlib
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.sites.models import Site
@@ -103,7 +104,22 @@ class DynamicSitesMiddleware(object):
                     folder_name, 'templates'),) + TEMPLATE_DIRS.value
                 request.dynamicsites_folder_name = folder_name
 
+                self.override_settings(settings, folder_name)
+
         return res
+
+    def override_settings(self, settings, folder_name):
+        "pull settings from the respective settings.py and override those in django settings"
+        site_package = 'sites.' + folder_name
+        smod = importlib.import_module('.settings', package=site_package)
+        skeys = [k for k in dir(smod) if not k.startswith('__')]
+        self.stash = {}
+        for k in skeys:
+            if k == 'SITE_ID':
+                # ignore site_id, because it is set in lookup()
+                continue
+            self.stash[k] = getattr(settings, k, None)
+            setattr(settings.__dict__['_wrapped'].__class__, k, make_tls_property(getattr(smod, k)))
 
     def process_response(self, request, response):
         """
@@ -116,6 +132,11 @@ class DynamicSitesMiddleware(object):
         try:
             if self._old_TEMPLATE_DIRS is not None:
                 settings.TEMPLATE_DIRS = self._old_TEMPLATE_DIRS
+        except AttributeError:
+            pass
+        try:
+            for k, v in self.stash.items():
+                setattr(settings.__dict__['_wrapped'].__class__, k, v)
         except AttributeError:
             pass
         return response
