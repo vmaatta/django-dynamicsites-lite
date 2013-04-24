@@ -13,13 +13,15 @@ import os
 SITE_ID = settings.__dict__['_wrapped'].__class__.SITE_ID = make_tls_property()
 TEMPLATE_DIRS = settings.__dict__['_wrapped'].__class__.TEMPLATE_DIRS = make_tls_property(settings.TEMPLATE_DIRS)
 
+
 class DynamicSitesError(Exception):
     pass
+
 
 class DynamicSitesMiddleware(object):
     """
     Sets settings.SITE_ID based on request's domain.
-    Also handles hostname redirects, and ensures the 
+    Also handles hostname redirects, and ensures the
     proper subdomain is requested for the site
     """
     def process_request(self, request):
@@ -35,7 +37,7 @@ class DynamicSitesMiddleware(object):
         self.env_domain_requested = None
         self._old_TEMPLATE_DIRS = getattr(settings, "TEMPLATE_DIRS", None)
 
-        # main loop - lookup the site by domain/subdomain, plucking 
+        # main loop - lookup the site by domain/subdomain, plucking
         # subdomains off the request hostname until a site or
         # redirect is found
         res = self.lookup()
@@ -62,15 +64,15 @@ class DynamicSitesMiddleware(object):
                 self.site.id,
                 self.site.domain)
 
-            # make sure the domain requested is the subdomain/domain 
+            # make sure the domain requested is the subdomain/domain
             # (ie. domain_unsplit) we used to locate the site
             if self.domain_requested is not self.domain_unsplit:
-                # if not redirect to the subdomain/domain 
+                # if not redirect to the subdomain/domain
                 # (ie. domain_unsplit) we used to locate the site
                 self.logger.debug('%s does not match %s.  Redirecting to %s',
                     self.domain_requested,
                     self.domain_unsplit,
-                    self.domain_unsplit)                    
+                    self.domain_unsplit)
                 return self.redirect(self.domain_unsplit)
             # keep copies of these for other apps/middleware to use
             self.request.domain_unsplit = self.domain_unsplit
@@ -95,14 +97,13 @@ class DynamicSitesMiddleware(object):
                     pass
                 # add site templates dir to TEMPLATE_DIRS
                 self.logger.debug(
-                    'adding %s to TEMPLATE_DIRS', 
+                    'adding %s to TEMPLATE_DIRS',
                     os.path.join(settings.SITES_DIR, folder_name, 'templates'))
                 TEMPLATE_DIRS.value = (os.path.join(settings.SITES_DIR,
                     folder_name, 'templates'),) + TEMPLATE_DIRS.value
                 request.dynamicsites_folder_name = folder_name
 
         return res
-
 
     def process_response(self, request, response):
         """
@@ -119,11 +120,10 @@ class DynamicSitesMiddleware(object):
             pass
         return response
 
-
     def get_domain_and_port(self):
         """
         Django's request.get_host() returns the requested host and possibly the
-        port number.  Return a tuple of domain, port number.  
+        port number.  Return a tuple of domain, port number.
         Domain will be lowercased
         """
         host = self.request.get_host()
@@ -131,20 +131,19 @@ class DynamicSitesMiddleware(object):
             domain, port = host.split(':')
             return (domain.lower(), port)
         else:
-            return (host.lower(), 
+            return (host.lower(),
                 self.request.META.get('SERVER_PORT'))
-
 
     def lookup(self):
         """
         The meat of this middleware.
-        
+
         Returns None and sets settings.SITE_ID if able to find a Site
         object by domain and its subdomain is valid.
-        
+
         Returns an HttpResponsePermanentRedirect to the Site's default
-        subdomain if a site is found but the requested subdomain 
-        is not supported, or if domain_unsplit is defined in 
+        subdomain if a site is found but the requested subdomain
+        is not supported, or if domain_unsplit is defined in
         settings.HOSTNAME_REDIRECTS
 
         Otherwise, returns False.
@@ -193,7 +192,7 @@ class DynamicSitesMiddleware(object):
         # check database
         try:
             self.logger.debug(
-                'Checking database for domain=%s', 
+                'Checking database for domain=%s',
                 self.domain)
             self.site = all_sites().get(domain=self.domain)
         except Site.DoesNotExist:
@@ -206,7 +205,7 @@ class DynamicSitesMiddleware(object):
         return None
 
     def _redirect(self, new_host, subdomain=None):
-        """experimental: 
+        """experimental:
         wrapper around _redirect_real to throw up
         any django debug toolbar redirect notices.
         Note todo: this is not properly respecting
@@ -230,7 +229,7 @@ class DynamicSitesMiddleware(object):
 
     def _redirect_real(self, new_host, subdomain=None):
         """
-        Tries its best to preserve request protocol, port, path, 
+        Tries its best to preserve request protocol, port, path,
         and query args.  Only works with HTTP GET
         """
         if subdomain and subdomain is not "''":
@@ -245,8 +244,8 @@ class DynamicSitesMiddleware(object):
             new_host,
             (int(self.port) not in (80, 443)) and ':%s' % self.port or '',
             urlquote(self.request.path),
-            (self.request.method == 'GET' 
-                and len(self.request.GET) > 0) 
+            (self.request.method == 'GET'
+                and len(self.request.GET) > 0)
                     and '?%s' % self.request.GET.urlencode() or ''
         ))
 
@@ -262,24 +261,24 @@ class DynamicSitesMiddleware(object):
             # does a env_hostname exist for the target redirect?
             target_domain = '%s%s' % ((subdomain and subdomain is not "''") and '%s.' % subdomain or '', new_host)
             target_env_hostname = self.find_env_hostname(target_domain)
-            target_subdomain=None
+            target_subdomain = None
             while not target_env_hostname and target_domain:
                 try:
-                    target_subdomain, target_domain = target_domain.split('.',1)
+                    target_subdomain, target_domain = target_domain.split('.', 1)
                 except ValueError:
                     break
                 target_env_hostname = self.find_env_hostname(target_domain)
             if target_env_hostname:
                 self.logger.debug(
-                    'Redirecting to target env_hostname=%s, subdomain=%s', 
-                    target_env_hostname, 
+                    'Redirecting to target env_hostname=%s, subdomain=%s',
+                    target_env_hostname,
                     target_subdomain)
                 return self._redirect(target_env_hostname,
                                      subdomain=target_subdomain)
-            # unable to find env_hostname for target redirect... 
+            # unable to find env_hostname for target redirect...
             # fall through to redirect to target redirect
             self.logger.debug(
-                'No ENV_HOSTNAME map found for %s', 
+                'No ENV_HOSTNAME map found for %s',
                 new_host)
         return self._redirect(new_host, subdomain)
 
