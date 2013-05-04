@@ -115,7 +115,7 @@ class DynamicSitesMiddleware(object):
         skeys = [k for k in dir(smod) if not k.startswith('__')]
         self.stash = {}
         for k in skeys:
-            if k == ('SITE_ID', 'TEMPLATE_DIRS'):
+            if k in ('SITE_ID', 'TEMPLATE_DIRS'):
                 # ignore site_id, because it is set in lookup()
                 continue
             self.stash[k] = getattr(settings, k, None)
