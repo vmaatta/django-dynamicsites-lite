@@ -35,11 +35,8 @@ class DynamicSitesMiddleware(object):
         self.env_domain_requested = None
         self._old_TEMPLATE_DIRS = getattr(settings, "TEMPLATE_DIRS", None)
 
-        res = None
         if self.domain == 'testserver':
-            self.site = all_sites().get(id=0)
-        else:
-            res = self.lookup()
+            self.domain = all_sites().get(id=0).domain
 
         # main loop - lookup the site by domain/subdomain, plucking 
         # subdomains off the request hostname until a site or
