@@ -15,9 +15,9 @@ setup(
     A site may have its own urls.py and templates
     A single site may accept requests from multiple hostnames
     Allows for environment hostname mappings to use non-production hostnames (for use in dev, staging, test, etc. environments)""",
-    author='Ian Ward',
-    author_email='ian@excess.org',
-    url='https://bitbucket.org/wardi/django-dynamicsites-lite',
+    author='Ville Määttä',
+    author_email='ville.maatta@ruriat.com',
+    url='https://bitbucket.org/vmaatta/django-dynamicsites-lite',
     platforms=['any'],
     packages=['dynamicsiteslite'],
 )
