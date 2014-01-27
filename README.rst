@@ -12,6 +12,7 @@ Expands the standard django.contrib.sites package to allow for:
  * 301 Redirects to canonical hostnames
  * A site may have its own urls.py and templates
  * Allows for environment hostname mappings to use non-production hostnames (for use in dev, staging, test, etc. environments)
+ * Sites may override the main settings.py with their individual values.
 
 Configuration
 -------------
@@ -58,11 +59,13 @@ Configuration
 
  7. make ``sites`` dir (from the SITES_DIR setting above) and put a ``__init__.py`` file inside
 
- 8. make a site dir for each site you're hosting (eg. ``mkdir sites/www_mysitesdomain_com``) <-- put underscores instead of dots in the domain name, these need to be imported as python packages.  Make sure to put an ``__init__.py`` file in each site dir as well.
+ 8. make a site dir for each site you're hosting (eg. ``mkdir sites/mysitesdomain_com``) <-- put underscores instead of dots in the domain name, these need to be imported as python packages.  Make sure to put an ``__init__.py`` file in each site dir as well.
 
  9. add a SITES_FILTER setting if you want to restrict the sites served by this project.  SITES_FILTER is a dict used as follows when dynamicsiteslite looks up sites in the database::
 
         Site.objects.filter(**SITES_FILTER)
+
+ 10. optionally add a settings.py file to any SITES_DIR/mysitesdomain_com directory. The settings in this file will override those in the main settings.py file just for this site. If you configure site-info, then you can see the settings values for each site while settings.DEBUG is true. Be careful with this.
 
 Debugging
 ---------
